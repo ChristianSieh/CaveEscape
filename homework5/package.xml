@@ -1,0 +1,14 @@
+<package>
+  <name>homework5</name>
+  <version>0.0.1</version>
+  <description>Differential drive robot simulation for csc415/515 final project</description>
+  <maintainer email="joelillo113@gmail.com">Joe Lillo</maintainer>
+  <maintainer email="lisa.s.woody@gmail.com">Lisa Woody</maintainer>
+
+  <license>closed</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <run_depend>gazebo_ros</run_depend>
+  <run_depend>map_server</run_depend>
+</package>

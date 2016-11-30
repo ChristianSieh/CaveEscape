@@ -1,0 +1,49 @@
+<launch>
+
+  <param name="/gps_noise" value="0.0"/>
+  <param name="/pval" value="-0.3"/>
+  <param name="/ival" value="0.1"/>
+  <param name="/dval" value="0"/>
+  <param name="/maxforce" value="3.0"/>
+  <param name="/maxi" value="0.01"/>
+
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="gui" default="true"/>
+  <arg name="headless" default="false"/>
+  <arg name="debug" default="false"/>
+  <arg name="verbose" default="false"/>
+  <arg name="world_name" default="$(find homework5)/worlds/cave.world"/>
+  <arg name="map" default="$(find homework5)/maps/map.yaml"/>
+
+  <!-- set command arguments -->
+  <arg unless="$(arg paused)" name="command_arg1" value=""/>
+  <arg     if="$(arg paused)" name="command_arg1" value="-u"/>
+  <arg unless="$(arg headless)" name="command_arg2" value=""/>
+  <arg     if="$(arg headless)" name="command_arg2" value="-r"/>
+  <arg unless="$(arg verbose)" name="command_arg3" value=""/>
+  <arg     if="$(arg verbose)" name="command_arg3" value="--verbose"/>
+  <arg unless="$(arg debug)" name="script_type" value="gzserver"/>
+  <arg     if="$(arg debug)" name="script_type" value="debug"/>
+
+  <!-- start gazebo server-->
+  <node name="gazebo" pkg="gazebo_ros" type="$(arg script_type)" respawn="false" output="screen"
+	args="$(arg command_arg1) $(arg command_arg2) $(arg command_arg3) $(arg world_name)" />
+
+  <!-- start gazebo client -->
+  <group if="$(arg gui)">
+    <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" respawn="false" output="screen"/>
+  </group>
+
+  <!-- Run the map server -->
+  <node name="map_server" pkg="map_server" type="map_server" args=" $(arg map)" required="true" output="screen">
+      <param name="frame_id" value="/map" />
+  </node>
+
+  <param name="robot_description"
+	 command="$(find xacro)/xacro.py '$(find homework5)/urdf/diffdrive.xacro'" />
+
+  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+	args="-urdf -model diffdrive -z 0.06 -param robot_description"/>
+
+</launch>
