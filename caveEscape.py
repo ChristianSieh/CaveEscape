@@ -93,9 +93,11 @@ def publishWheel():
 
     # Add our wheel velocities (radians/sec)
     p = JointTrajectoryPoint()
-    p.velocities.append(1000.0) # left wheel
-    p.velocities.append(1000.0) # right wheel
+    p.velocities.append(1.0) # left wheel
+    p.velocities.append(1.0) # right wheel
     cmd.points = [p]
+
+    print(p.velocities)
 
     # Publish our wheel velocities
     wheelPub.publish(cmd)
@@ -159,11 +161,16 @@ rospy.Subscriber("laser/scan", LaserScan, lidarCallback)
 rospy.Subscriber("gps", Pose2D, gpsCallback)
 
 # Rate to publish the wheel velocities
-rate = rospy.Rate(2) # 2 hz
+rate = rospy.Rate(40) # 40 hz
+
+sleepCounter = 0;
 
 # Loop until we shut the node down (control-c).
 while not rospy.is_shutdown():
-
-    publishPath()
-    publishWheel()
+    print(sleepCounter)
+    if sleepCounter == 20:
+        publishPath()
+        publishWheel()
+        sleepCounter = 0
     rate.sleep()
+    sleepCounter += 1
