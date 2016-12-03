@@ -1,0 +1,5 @@
+<launch>
+  <node name="planner" pkg="cave_escape" type="planner" required="true" output="screen"/>
+  <node name="driver" pkg="cave_escape" type="driver" required="true" output="screen"/>
+  <node name="diff_drive" pkg="cave_escape" type="diff_drive" required="true" output="screen"/>
+</launch>

@@ -1,0 +1,12 @@
+<package>
+  <name>cave_escape</name>
+  <version>0.0.1</version>
+  <description>CSC415/515 final project</description>
+
+  <maintainer email="no@gmail.com">Colby Johnson</maintainer>
+  <maintainer email="nope@gmail.com">Christian Sieh</maintainer>
+
+  <license>closed</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+</package>
