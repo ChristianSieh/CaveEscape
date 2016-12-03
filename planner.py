@@ -1,14 +1,12 @@
-#!/usr/bin/env python
-import rospy
-from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-from geometry_msgs.msg import PoseStamped
+# Planner.py
+
+import rospy as planner
+
+from nav_msgs.msg import OccupancyGrid
+from geometry_msgs.msg import Pose2D
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
-from geometry_msgs.msg import Pose2D
 from sensor_msgs.msg import LaserScan
-from nav_msgs.msg import OccupancyGrid
-
-###### Functions ######
 
 def mapCallback(msg):
     print "----- New Map -----"
@@ -44,6 +42,13 @@ def mapCallback(msg):
     dataindex = yindex*msg.info.width + xindex
     print "Point (0,-1): ", msg.data[dataindex]
 
+def gpsCallback(msg):
+    print "----- New Location -----"
+    print "X: ", msg.x
+    print "Y: ", msg.y
+    print "Theta: ", msg.theta
+
+### Lidar stored here until we know where to put it
 def lidarCallback(msg):
     print "----- New Scan -----"
 
@@ -77,31 +82,6 @@ def lidarCallback(msg):
     index = len(msg.ranges)-1
     print "\t" + str(msg.angle_max) + " radians: " + str(msg.ranges[index])
 
-def gpsCallback(msg):
-    print "----- New Location -----"
-    print "X: ", msg.x
-    print "Y: ", msg.y
-    print "Theta: ", msg.theta
-
-def publishWheel():
-    # Create a message to publish
-    cmd = JointTrajectory()
-
-    # Add joint names for our left and right wheels
-    cmd.joint_names.append("left")
-    cmd.joint_names.append("right")
-
-    # Add our wheel velocities (radians/sec)
-    p = JointTrajectoryPoint()
-    p.velocities.append(1.0) # left wheel
-    p.velocities.append(1.0) # right wheel
-    cmd.points = [p]
-
-    print(p.velocities)
-
-    # Publish our wheel velocities
-    wheelPub.publish(cmd)
-
 def publishPath():
     msg = Path()
 
@@ -125,52 +105,21 @@ def publishPath():
 
     pathPub.publish(msg)
 
-def publishPose():
-    msg = PoseStamped()
+planner.init_node('planner')
 
-    # important!
-    msg.header.frame_id = "map"
+planner.Subscriber("map", OccupancyGrid, mapCallback)
+planner.Subscriber("gps", Pose2D, gpsCallback)
+planner.Subscriber("laser/scan", LaserScan, lidarCallback)
 
-    # Publish Position (1,0)
-    msg.pose.position.x = 1.0
-    msg.pose.position.y = 0.0
+pathPub = planner.Publisher("path", Path, queue_size=10)
 
-    # Publish theta = pi/4
-    # We need to convert from euler coordinates to a quaternion.
-    quaternion = tf.transformations.quaternion_from_euler(0,0,3.14/4.0)
-    msg.pose.orientation.x = quaternion[0]
-    msg.pose.orientation.y = quaternion[1]
-    msg.pose.orientation.z = quaternion[2]
-    msg.pose.orientation.w = quaternion[3]
+rate = planner.Rate(2) # 2 hz
+#rate = rospy.Rate(40) # 40 hz
 
-    posePub.publish(msg)
-
-###### MAIN ######
-
-# Start a ROS node.
-rospy.init_node('drive_robot_test')
-
-# Wheel velocity publisher
-wheelPub = rospy.Publisher("cmd_joint_traj", JointTrajectory, queue_size=10)
-pathPub = rospy.Publisher("path", Path, queue_size=10)
-posePub = rospy.Publisher("pose_estimate", PoseStamped, queue_size=10)
-
-#Subscribers
-rospy.Subscriber("map", OccupancyGrid, mapCallback)
-rospy.Subscriber("laser/scan", LaserScan, lidarCallback)
-rospy.Subscriber("gps", Pose2D, gpsCallback)
-
-# Rate to publish the wheel velocities
-rate = rospy.Rate(40) # 40 hz
-
-sleepCounter = 0;
-
-# Loop until we shut the node down (control-c).
-while not rospy.is_shutdown():
-    print(sleepCounter)
-    if sleepCounter == 20:
-        publishPath()
-        publishWheel()
-        sleepCounter = 0
+while not planner.is_shutdown():
+    publishPath()
     rate.sleep()
-    sleepCounter += 1
+
+
+
+
