@@ -1,5 +1,5 @@
 <launch>
-  <node name="planner" pkg="homework5" type="planner.py" required="true" output="screen"/>
-  <node name="driver" pkg="homework5" type="driver.py" required="true" output="screen"/>
-  <node name="diff_drive" pkg="homework5" type="diff_drive.py" required="true" output="screen"/>
+  <node name="planner" pkg="cave_escape" type="planner.py"/>
+  <node name="driver" pkg="cave_escape" type="driver.py"/>
+  <node name="diff_drive" pkg="cave_escape" type="diff_drive.py"/>
 </launch>

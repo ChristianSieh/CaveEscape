@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Planner.py
 
 import rospy as planner
@@ -108,7 +110,7 @@ def publishPath():
 planner.init_node('planner')
 
 planner.Subscriber("map", OccupancyGrid, mapCallback)
-planner.Subscriber("gps", Pose2D, gpsCallback)
+#planner.Subscriber("gps", Pose2D, gpsCallback)
 planner.Subscriber("laser/scan", LaserScan, lidarCallback)
 
 pathPub = planner.Publisher("path", Path, queue_size=10)
