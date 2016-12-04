@@ -26,7 +26,7 @@ def gpsCallback(msg):
 def publishPose():
     global gpsx, gpsy, gpsth
     msg = PoseStamped()
-
+    
     # important!
     msg.header.frame_id = "map"
 
