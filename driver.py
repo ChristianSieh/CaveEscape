@@ -61,9 +61,26 @@ def publishVelocity():
     msg.angular.y = trajy
     
     if(trajx == 0):
-        msg.angular.z = np.pi/2.0
+        #determine direction
+        #down
+        if(trajy < 0):
+            msg.angular.z = -np.pi/2.0
+        else:
+            msg.angular.z = np.pi/2.0
     else:
-        msg.angular.z = np.arctan(trajy/trajx)
+        #determine direction
+        #first quadrant
+        if(trajy > 0 and trajx > 0):
+            msg.angular.z = np.arctan(trajy/trajx)
+        #second quadrant
+        elif(trajy > 0 and trajx < 0):
+            msg.angular.z = np.arctan(trajy/abs(trajx)) + np.pi/2.0
+        #third quadrant
+        elif(trajy < 0 and trajx < 0):
+            msg.angular.z = -np.pi/2.0 - np.arctan(abs(trajy)/abs(trajx))
+        #fourth quadrant
+        else:
+            msg.angular.z = -np.arctan(abs(trajy)/trajx)
 
     velPub.publish(msg)
 
@@ -83,23 +100,47 @@ def calculateTrajectory():
     #set velocities based on slope equations
     else:
         #calculate distance needed to go
-        distx = path[current_path].pose.position.x - gpsx
-        disty = path[current_path].pose.position.y - gpsy
+        distx = abs(gpsx - path[current_path].pose.position.x)
+        disty = abs(-gpsy - path[current_path].pose.position.y)
         #calculate speeds
         if( disty == 0 ):
-            trajx = distx
+            #determine direction
+            #left
+            if(gpsx < path[current_path].pose.position.x):
+                trajx = distx
+            #right
+            else:
+                trajx = -distx
         else:
-            trajx = distx/disty
+            #determin direction
+            #left
+            if(gpsx < path[current_path].pose.position.x):
+                trajx = distx
+            #right
+            else:
+                trajx = -distx
         if( distx == 0 ):
-            trajy = disty
+            #determine direction
+            #down
+            if(gpsy < path[current_path].pose.position.y):
+                trajy = -disty
+            #up
+            else:
+                trajy = disty
         else:
-            trajy = disty/distx			
+            #determine direction
+            #down
+            if(gpsy < path[current_path].pose.position.y):
+                trajy = -disty	
+            #up
+            else:
+                trajy = disty
     
-        print distx, disty
+        print trajx, trajy
     
     #check if we have completed our current path
-    if( abs(distx) < 0.2 and
-        abs(disty) < 0.2):
+    if( distx < 0.2 and
+        disty < 0.2):
         current_path += 1
         print "Finished Path " + str(current_path-1)
 
