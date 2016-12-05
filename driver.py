@@ -4,6 +4,7 @@
 
 import rospy
 import tf
+import numpy as np
 
 from nav_msgs.msg import Path
 from geometry_msgs.msg import Pose2D
@@ -22,6 +23,9 @@ def gpsCallback(msg):
     #print "X: ", msg.x
     #print "Y: ", msg.y
     #print "Theta: ", msg.theta
+    gpsx = msg.x
+    gpsy = msg.y
+    gpsth = msg.theta
 
 def publishPose():
     global gpsx, gpsy, gpsth
@@ -45,12 +49,21 @@ def publishPose():
     posePub.publish(msg)
 
 def publishVelocity():
-    global trajx,trajy 
+    global trajx,trajy,gpsth,gpsx,gpsy 
 
     msg = Twist()
     
-    msg.linear.x = trajx
-    msg.linear.y = trajy
+    msg.linear.x = gpsx
+    msg.linear.y = gpsy
+    msg.linear.z = gpsth
+    
+    msg.angular.x = trajx
+    msg.angular.y = trajy
+    
+    if(trajx == 0):
+        msg.angular.z = np.pi/2.0
+    else:
+        msg.angular.z = np.arctan(trajy/trajx)
 
     velPub.publish(msg)
 
@@ -62,16 +75,17 @@ def calculateTrajectory():
 	    return
 	    
 	#check if we have reached our goal of exiting the cave
-    if( current_path > len(path) ):
+    if( current_path > (len(path)-1) ):
         trajx = 0
         trajy = 0
+        return
     #we haven't reached the end of the cave yet
     #set velocities based on slope equations
     else:
         #calculate distance needed to go
         distx = path[current_path].pose.position.x - gpsx
         disty = path[current_path].pose.position.y - gpsy
-        #calculate unweighted speeds
+        #calculate speeds
         if( disty == 0 ):
             trajx = distx
         else:
@@ -81,15 +95,14 @@ def calculateTrajectory():
         else:
             trajy = disty/distx			
     
+        print distx, disty
+    
     #check if we have completed our current path
-    if( abs(gpsx-path[current_path].pose.position.x) < 0.2 and
-        abs(gpsy-path[current_path].pose.position.y) < 0.2):
+    if( abs(distx) < 0.2 and
+        abs(disty) < 0.2):
         current_path += 1
         print "Finished Path " + str(current_path-1)
-        
-    print "Trajectory: x:" + str(trajx) + " y:" + str(trajy)
 
-TOPSPEED = 5
 current_path = 0
 sleepCounter = 0
 trajx = 0
