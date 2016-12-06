@@ -13,109 +13,285 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
 
+goalX = 7.0
+goalY = 2.0
+goalIndex = 0.0
+startX = 0.0
+startY = 0.0
+startIndex = 0.0
+mapWidth = 0
+mapHeight = 0
 
 # Empty Space: 0
 # Wall: 100
 # Unknown: -1
 def mapCallback(msg):
+    global mapWidth, mapHeight, startIndex, goalIndex
+
     print "----- New Map -----"
     print "Width: ", msg.info.width
     print "Height: ", msg.info.height
     print "Resolution: ", msg.info.resolution
     print "Origin: \n", msg.info.origin
 
-    # Get the map value at the point (0 meters ,1 meter)
-    x = 0.0
-    y = 1.0
-    # We need to calculate the index into our data array
-    xindex = int((x-msg.info.origin.position.x)*(1.0/msg.info.resolution))
-    yindex = int((y-msg.info.origin.position.y)*(1.0/msg.info.resolution))
-    dataindex = yindex*msg.info.width + xindex
+    # Calculate goal index
+    xindex = int((goalX - msg.info.origin.position.x) * (1.0 / msg.info.resolution))
+    yindex = int((goalY - msg.info.origin.position.y) * (1.0 / msg.info.resolution))
+    goalIndex = yindex * msg.info.width + xindex
+    print "Goal Index: ", goalIndex
 
-    newMap = np.zeros((msg.info.width * msg.info.height))
+    # Calculate start index
+    xindex = int((startX - msg.info.origin.position.x) * (1.0 / msg.info.resolution))
+    yindex = int((startY - msg.info.origin.position.y) * (1.0 / msg.info.resolution))
+    startIndex = yindex * msg.info.width + xindex
+    print "Start Index: ", startIndex
+
+    imageMap = np.zeros((msg.info.width * msg.info.height))
 
     # Increase size of obstacles by .2m since Robie is .17m wide
     for i, value in enumerate(msg.data):
         if(value == 100):
             # Left
             if((i % msg.info.width) - 1 > 0):
-                newMap[i - 1] = 100
+                imageMap[i - 1] = 100
                 if((i % msg.info.width) - 2 > 0):
-                    newMap[i - 2] = 100
+                    imageMap[i - 2] = 100
 
             # Right
             if((i % msg.info.width) + 1 <  msg.info.width):
-                newMap[i + 1] = 100
+                imageMap[i + 1] = 100
                 if((i % msg.info.width) + 2 < msg.info.width):
-                    newMap[i + 2] = 100
+                    imageMap[i + 2] = 100
 
             # Up
             if(i - msg.info.height > 0):
-                newMap[i - msg.info.width] = 100
+                imageMap[i - msg.info.width] = 100
                 if(i - (2 * msg.info.height) > 0):
-                    newMap[i - (2 * msg.info.width)] = 100
+                    imageMap[i - (2 * msg.info.width)] = 100
 
             # Down
             if(i + msg.info.height < (msg.info.height * msg.info.width)): 
-                newMap[i + msg.info.width] = 100
+                imageMap[i + msg.info.width] = 100
                 if(i + (2 * msg.info.height) < (msg.info.height * msg.info.width)): 
-                    newMap[i + (2 * msg.info.width)] = 100
+                    imageMap[i + (2 * msg.info.width)] = 100
 
             # Up Left
             if(((i % msg.info.width) - 1 > 0) and (i - msg.info.height > 0)):
-                newMap[(i - msg.info.width) - 1] = 100
+                imageMap[(i - msg.info.width) - 1] = 100
                 if(((i % msg.info.width) - 2 > 0) and (i - (2 * msg.info.height) > 0)):
-                    newMap[(i - (2 * msg.info.width)) - 2] = 100
+                    imageMap[(i - (2 * msg.info.width)) - 2] = 100
 
             # Up Right
             if(((i % msg.info.width) + 1 > 0) and (i - msg.info.height > 0)):
-                newMap[(i - msg.info.width) + 1] = 100
+                imageMap[(i - msg.info.width) + 1] = 100
                 if(((i % msg.info.width) + 2 > 0) and (i - (2 * msg.info.height) > 0)):
-                    newMap[(i - (2 * msg.info.width)) + 2] = 100
+                    imageMap[(i - (2 * msg.info.width)) + 2] = 100
 
             # Down Left
             if(((i % msg.info.width) - 1 > 0) and (i + msg.info.height < (msg.info.height * msg.info.width))):
-                newMap[(i + msg.info.width) - 1] = 100
+                imageMap[(i + msg.info.width) - 1] = 100
                 if(((i % msg.info.width) - 2 > 0) and (i + (2 * msg.info.height) < (msg.info.height * msg.info.width))):
-                    newMap[(i + (2 * msg.info.width)) - 2] = 100
+                    imageMap[(i + (2 * msg.info.width)) - 2] = 100
 
             # Down Right
             if(((i % msg.info.width) + 1 > 0) and (i + msg.info.height < (msg.info.height * msg.info.width))):
-                newMap[(i + msg.info.width) + 1] = 100
+                imageMap[(i + msg.info.width) + 1] = 100
                 if(((i % msg.info.width) + 2 > 0) and (i + (2 * msg.info.height) < (msg.info.height * msg.info.width))):
-                    newMap[(i + (2 * msg.info.width)) + 2] = 100
+                    imageMap[(i + (2 * msg.info.width)) + 2] = 100
 
         else:
-            newMap[i] = value
+            imageMap[i] = value
 
-    for i, value in enumerate(newMap):
+    mapWidth = msg.info.width
+    mapHeight = msg.info.height
+
+    pathMap = np.zeros((msg.info.width * msg.info.height))
+
+    inc = 1
+    path = waveFront(imageMap, pathMap, goalIndex, inc)
+
+    for i, value in enumerate(imageMap):
         if(value == -1.0):
-            newMap[i] = 127
+            imageMap[i] = 127
         if(value == 0.0):
-            newMap[i] = 255
+            imageMap[i] = 255
         if(value == 100.0):
-            newMap[i] = 0
+            imageMap[i] = 0
 
-    test = np.reshape(newMap, (200, 200))
+    #print path
 
-    target = open("test", 'w')
+    for i, value in enumerate(path):
+        imageMap[value] = 180
 
-    #for i, value in enumerate(newMap):
-        #if(i == 200):
-        #    target.write("\n")
-        #    i = 0
-        #else:
-        #    target.write(str(value) + " ")
-
-    #target.write(test)
-
-    #plt.gray()
-    #plt.imshow(test)
+    test = np.reshape(imageMap, (mapWidth, mapHeight))
 
     blah = Image.fromarray(test)
     blah.show()
 
-    print "done"
+def upIndex(index):
+    global mapHeight
+
+    if(index - mapHeight > 0):
+        upIndex = index - mapHeight
+        return upIndex
+
+    return -1
+
+def downIndex(index):
+    global mapWidth, mapHeight
+
+    if(index + mapHeight < (mapHeight * mapWidth)):
+        downIndex = index + mapHeight
+        return downIndex
+
+    return -1
+
+def leftIndex(index):
+    global mapWidth, mapHeight    
+
+    if((index % mapWidth) - 1 > 0):
+        leftIndex = index - 1
+        return leftIndex
+
+    return -1
+
+def rightIndex(index):
+    global mapWidth, mapHeight
+
+    if((index % mapWidth) + 1 < mapWidth):
+        rightIndex = index + 1
+        return rightIndex
+
+    return -1
+
+def upLeftIndex(index):
+    global mapWidth, mapHeight
+
+    if(index - mapHeight > 0 and (index % mapWidth) - 1 > 0):
+        upLeftIndex = index - mapHeight - 1
+        return upLeftIndex
+
+    return -1
+
+def upRightIndex(index):
+    global mapWidth, mapHeight
+
+    if(index - mapHeight > 0 and (index % mapWidth) + 1 < mapWidth):
+        upRightIndex = index - mapHeight + 1
+        return upRightIndex
+
+    return -1
+
+def downLeftIndex(index):
+    global mapWidth, mapHeight
+
+    if(index + mapHeight < (mapHeight * mapWidth) and (index % mapWidth) - 1 > 0):
+        downLeftIndex = index + mapHeight - 1
+        return downLeftIndex
+
+    return -1
+
+def downRightIndex(index):
+    global mapWidth, mapHeight
+
+    if(index + mapHeight < (mapHeight * mapWidth) and (index % mapWidth) + 1 < mapWidth):
+        downRightIndex = index + mapHeight + 1
+        return downRightIndex
+
+    return -1
+
+def waveFront(imageMap, pathMap, index, inc):
+
+    pathMap[index] = inc
+
+    inc += 1
+
+    queue = list()
+    queue.append(index)
+
+    while len(queue) != 0:
+        current = queue.pop(0)
+        for neighbor in getNeighbors(imageMap, current):
+            if(pathMap[neighbor] == 0):
+                pathMap[neighbor] = inc
+                queue.append(neighbor)
+        inc += 1
+
+    path = list()
+
+    path = descent(imageMap, pathMap)
+
+    #print "Path:", path
+
+    return path
+
+def descent(imageMap, pathMap):
+    global startIndex, goalIndex
+
+    tempIndex = startIndex
+    path = list()
+
+    # Descent Value, imageMap Index
+    neighborDict = dict()
+
+    while tempIndex != goalIndex:
+        neighbors = getNeighbors(imageMap, tempIndex)
+        
+        for i, value in enumerate(neighbors):
+            temp = pathMap[value]
+            neighborDict[temp] = value
+            
+        neighborValues = pathMap[neighbors]
+        #print "NeighborValues: ", neighborValues
+        bestNeighbor = min(neighborValues)
+        #print "Best Neighbor: ", bestNeighbor
+        path.append(neighborDict[bestNeighbor])
+        tempIndex = neighborDict[bestNeighbor]
+
+    return path    
+
+
+def getNeighbors(imageMap, index):
+    neighbors = list()
+
+    tempIndex = upIndex(index)
+
+    # if the index isn't out of bounds, and it's an open space
+    if(tempIndex != -1 and imageMap[tempIndex] == 0):
+        neighbors.append(tempIndex)
+
+    tempIndex = rightIndex(index)
+    if(tempIndex != -1 and imageMap[tempIndex] == 0):
+        neighbors.append(tempIndex)
+
+    tempIndex = downIndex(index)
+    if(tempIndex != -1 and imageMap[tempIndex] == 0):
+        neighbors.append(tempIndex)
+
+    tempIndex = leftIndex(index)
+    if(tempIndex != -1 and imageMap[tempIndex] == 0):
+        neighbors.append(tempIndex)
+
+    tempIndex = upLeftIndex(index)
+    if(tempIndex != -1 and imageMap[tempIndex] == 0):
+        neighbors.append(tempIndex)
+
+    tempIndex = upRightIndex(index)
+    if(tempIndex != -1 and imageMap[tempIndex] == 0):
+        neighbors.append(tempIndex)
+
+    tempIndex = downLeftIndex(index)
+    if(tempIndex != -1 and imageMap[tempIndex] == 0):
+        neighbors.append(tempIndex)
+
+    tempIndex = downRightIndex(index)
+    if(tempIndex != -1 and imageMap[tempIndex] == 0):
+        neighbors.append(tempIndex)    
+
+    return neighbors
+
+#def calculatePath():
+
 
 def gpsCallback(msg):
     print "----- New Location -----"
