@@ -14,7 +14,7 @@ def cmd_velCallback(msg):
     # calculate the difference between our directional theta(dot)
     # and the positional theta
     theta_dot = msg.angular.z-msg.linear.z
-    
+   
     print msg.linear.z, msg.angular.z
     
     # calculate our wheels speeds from our theta dot
@@ -54,7 +54,7 @@ phi_2 = 0
 L = 0.15
 r = 0.05
 # speed
-v = 0.1
+v = 0.8
 
 # Start a ROS node.
 rospy.init_node('diff_drive')
