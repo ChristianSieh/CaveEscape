@@ -349,8 +349,10 @@ def publishPath():
     for i, value in enumerate(newPath):
         x = value % mapWidth
         y = (value - x) / mapHeight
+
         x = x / 10.0 - 10
         y = y / 10.0 - 10
+
         p = PoseStamped()
         p.pose.position.x = x
         p.pose.position.y = -y
