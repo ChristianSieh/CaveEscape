@@ -81,10 +81,6 @@ def calculateTrajectory():
     if( not map_rcvd ):
 	    return
 	    
-	#calculate distance needed to go
-    distx = path[current_path].pose.position.x-gpsx
-    disty = path[current_path].pose.position.y-gpsy    
-	    
 	#check if we have reached our goal of exiting the cave
     if( current_path > (len(path)-1) ):
         trajx = 0
@@ -93,18 +89,21 @@ def calculateTrajectory():
     #we haven't reached the end of the cave yet
     #set velocities based on slope equations
     else:
+        #calculate distance needed to go
+        distx = path[current_path].pose.position.x-gpsx
+        disty = path[current_path].pose.position.y-gpsy
+        
         trajx = distx
         #need to flip the y trajectory to compensate for map coordinates
         trajy = -disty
         
     #check if we have completed our current path
-    if( abs(distx) < 0.05 and
-        abs(disty) < 0.05):
+    if( abs(distx) < 0.4 and
+        abs(disty) < 0.4):
         current_path += 1
         print "Finished Path " + str(current_path-1)
-        print path[current_path].pose.position.x, path[current_path].pose.position.y
         
-current_path = 0
+current_path = 1
 sleepCounter = 0
 trajx = 0
 trajy = 0
