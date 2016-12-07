@@ -130,8 +130,8 @@ def mapCallback(msg):
 
     test = np.reshape(imageMap, (mapWidth, mapHeight))
 
-    blah = Image.fromarray(test)
-    blah.show()
+    #blah = Image.fromarray(test)
+    #blah.show()
 
 def upIndex(index):
     global mapHeight
@@ -355,7 +355,7 @@ def publishPath():
 
         p = PoseStamped()
         p.pose.position.x = x
-        p.pose.position.y = -y
+        p.pose.position.y = y
         msg.poses.append(p)
 
     pathPub.publish(msg)
