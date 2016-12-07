@@ -81,6 +81,14 @@ def calculateTrajectory():
     if( not map_rcvd ):
 	    return
 	    
+	#check if we have completed our current path
+    if( abs(distx) < 0.2 and
+        abs(disty) < 0.2):
+        current_path += 1
+        print "Finished Path " + str(current_path-1)
+    else:
+        return
+	    
 	#check if we have reached our goal of exiting the cave
     if( current_path > (len(path)-1) ):
         trajx = 0
