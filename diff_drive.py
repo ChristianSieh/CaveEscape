@@ -13,9 +13,14 @@ def cmd_velCallback(msg):
     
     # calculate the difference between our directional theta(dot)
     # and the positional theta
-    theta_dot = msg.angular.z-msg.linear.z
+    if(msg.linear.z > (np.pi / 2.0) and msg.angular.z < (-np.pi / 2.0)):
+        newTheta = msg.angular.z + np.pi * 2
+    else:
+        newTheta = msg.angular.z
+
+    theta_dot = newTheta - msg.linear.z
    
-    print msg.linear.z, msg.angular.z
+    print msg.linear.z, newTheta
     
     # Increment Speed counter
     speed_count += 1
