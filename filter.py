@@ -13,10 +13,18 @@ def gpsCallback(msg):
     gpsy = msg.y
     gpsth = msg.theta
     
-def filterGPS():
-    global gpsx, gpsy, gpsth, filteredx, filteredy, filteredth
+def cmdCallback(msg):
+    global phi_1, phi2
     
-    # use a kalman filter to filter our noise
+    #store our latest commanded wheel velocities
+    phi_1 = msg.velocities[0]
+    phi_2 = msg.velocities[1]
+    
+def filterGPS():
+    global gpsx,gpsy,gpsth,filteredx,filteredy,filteredth,phi_1,phi_2,oldx,oldy,oldth
+    
+    
+    
     
 def publishFilteredGPS():
     global filteredx, filteredy, filteredth
@@ -37,9 +45,21 @@ gpsx = 0
 gpsy = 0
 gpsth = 0
 
+phi_1 = 0
+phi_2 = 0
+
 filteredx = 0
 filteredy = 0
 filteredth = 0
+
+xp0 = 0
+xp1 = 0
+xf0 = 0
+xf1 = 0
+
+# Define constants
+L = 0.15
+r = 0.05
 
 # initialize our node
 rospy.init_node('filter')
@@ -48,6 +68,7 @@ rospy.init_node('filter')
 # the filtered gps
 gpsPub = rospy.Publisher("gps_filter", Pose2D, queue_size=10)
 rospy.Subscriber("gps", Pose2D, gpsCallback)
+rospy.Subscriber("cmd_joint_traj", JointTrajectory, cmdCallback)
 
 rate = rospy.Rate(10) #10 hz
 
