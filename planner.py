@@ -21,12 +21,13 @@ startY = 0.0
 startIndex = 0.0
 mapWidth = 0
 mapHeight = 0
+path = list()
 
 # Empty Space: 0
 # Wall: 100
 # Unknown: -1
 def mapCallback(msg):
-    global mapWidth, mapHeight, startIndex, goalIndex
+    global mapWidth, mapHeight, startIndex, goalIndex, path
 
     print "----- New Map -----"
     print "Width: ", msg.info.width
@@ -45,6 +46,10 @@ def mapCallback(msg):
     yindex = int((startY - msg.info.origin.position.y) * (1.0 / msg.info.resolution))
     startIndex = yindex * msg.info.width + xindex
     print "Start Index: ", startIndex
+
+    originX = msg.info.origin.position.x
+    originY = msg.info.origin.position.y
+    resolution = msg.info.resolution
 
     imageMap = np.zeros((msg.info.width * msg.info.height))
 
@@ -340,19 +345,15 @@ def publishPath():
     msg.header.frame_id = "map"
 
     p = PoseStamped()
-    p.pose.position.x = 0.0
-    p.pose.position.y = 0.0
-    msg.poses.append(p)
 
-    p = PoseStamped()
-    p.pose.position.x = 2.0
-    p.pose.position.y = 0.0
-    msg.poses.append(p)
-
-    p = PoseStamped()
-    p.pose.position.x = 3.25
-    p.pose.position.y = 2.0
-    msg.poses.append(p)
+    for i, value in enumerate(path):
+        x = value % mapWidth
+        y = (value - x) / mapHeight
+        print value
+        print x, ",", y
+        p.pose.position.x = x
+        p.pose.position.y = y
+        msg.poses.append(p)
 
     pathPub.publish(msg)
 
@@ -368,7 +369,7 @@ rate = planner.Rate(2) # 2 hz
 #rate = rospy.Rate(40) # 40 hz
 
 while not planner.is_shutdown():
-    #publishPath()
+    publishPath()
     rate.sleep()
 
 
