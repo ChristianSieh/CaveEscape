@@ -56,6 +56,8 @@ def mapCallback(msg):
     # Increase size of obstacles by .2m since Robie is .17m wide
     for i, value in enumerate(msg.data):
         if(value == 100):
+            imageMap[i] = 100
+
             # Left
             if((i % msg.info.width) - 1 > 0):
                 imageMap[i - 1] = 100
@@ -63,10 +65,10 @@ def mapCallback(msg):
                     imageMap[i - 2] = 100
 
             # Right
-            if((i % msg.info.width) + 1 <  msg.info.width):
-                imageMap[i + 1] = 100
-                if((i % msg.info.width) + 2 < msg.info.width):
-                    imageMap[i + 2] = 100
+            if(((i % msg.info.width) + 1) <  msg.info.width):
+                imageMap[(i + 1)] = 100
+                if(((i % msg.info.width) + 2) < msg.info.width):
+                    imageMap[(i + 2)] = 100
 
             # Up
             if(i - msg.info.height > 0):
@@ -87,9 +89,9 @@ def mapCallback(msg):
                     imageMap[(i - (2 * msg.info.width)) - 2] = 100
 
             # Up Right
-            if(((i % msg.info.width) + 1 > 0) and (i - msg.info.height > 0)):
+            if(((i % msg.info.width) + 1 < msg.info.width) and (i - msg.info.height > 0)):
                 imageMap[(i - msg.info.width) + 1] = 100
-                if(((i % msg.info.width) + 2 > 0) and (i - (2 * msg.info.height) > 0)):
+                if(((i % msg.info.width) + 2 < msg.info.width) and (i - (2 * msg.info.height) > 0)):
                     imageMap[(i - (2 * msg.info.width)) + 2] = 100
 
             # Down Left
@@ -99,12 +101,12 @@ def mapCallback(msg):
                     imageMap[(i + (2 * msg.info.width)) - 2] = 100
 
             # Down Right
-            if(((i % msg.info.width) + 1 > 0) and (i + msg.info.height < (msg.info.height * msg.info.width))):
+            if((i % msg.info.width) + 1 < msg.info.width and i + msg.info.height < (msg.info.height * msg.info.width)):                          
                 imageMap[(i + msg.info.width) + 1] = 100
-                if(((i % msg.info.width) + 2 > 0) and (i + (2 * msg.info.height) < (msg.info.height * msg.info.width))):
+                if(((i % msg.info.width) + 2 < msg.info.width) and (i + (2 * msg.info.height) < (msg.info.height * msg.info.width))):
                     imageMap[(i + (2 * msg.info.width)) + 2] = 100
 
-        else:
+        elif(imageMap[i] != 100):
             imageMap[i] = value
 
     mapWidth = msg.info.width
@@ -122,8 +124,6 @@ def mapCallback(msg):
             imageMap[i] = 255
         if(value == 100.0):
             imageMap[i] = 0
-
-    #print path
 
     for i, value in enumerate(path):
         imageMap[value] = 180
@@ -226,8 +226,6 @@ def waveFront(imageMap, pathMap, index, inc):
 
     path = descent(imageMap, pathMap)
 
-    #print "Path:", path
-
     return path
 
 def descent(imageMap, pathMap):
@@ -247,9 +245,7 @@ def descent(imageMap, pathMap):
             neighborDict[temp] = value
             
         neighborValues = pathMap[neighbors]
-        #print "NeighborValues: ", neighborValues
         bestNeighbor = min(neighborValues)
-        #print "Best Neighbor: ", bestNeighbor
         path.append(neighborDict[bestNeighbor])
         tempIndex = neighborDict[bestNeighbor]
 
@@ -344,15 +340,20 @@ def publishPath():
     # important!
     msg.header.frame_id = "map"
 
-    p = PoseStamped()
+    newPath = list()
 
     for i, value in enumerate(path):
+        if(i % 5 == 0):
+            newPath.append(value)
+
+    for i, value in enumerate(newPath):
         x = value % mapWidth
         y = (value - x) / mapHeight
-        print value
-        print x, ",", y
+        x = x / 10.0 - 10
+        y = y / 10.0 - 10
+        p = PoseStamped()
         p.pose.position.x = x
-        p.pose.position.y = y
+        p.pose.position.y = -y
         msg.poses.append(p)
 
     pathPub.publish(msg)
