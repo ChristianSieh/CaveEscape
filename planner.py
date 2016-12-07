@@ -344,15 +344,16 @@ def publishPath():
     # important!
     msg.header.frame_id = "map"
 
-    p = PoseStamped()
-
     for i, value in enumerate(path):
         x = value % mapWidth
         y = (value - x) / mapHeight
-        print value
-        print x, ",", y
+        #print value
+        #print x, ",", y
+        x = x/10.0 - 10.0
+        y = y/10.0 - 10.0
+        p = PoseStamped()
         p.pose.position.x = x
-        p.pose.position.y = y
+        p.pose.position.y = -y
         msg.poses.append(p)
 
     pathPub.publish(msg)
