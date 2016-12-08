@@ -20,10 +20,6 @@ def pathCallback(msg):
 
 def gpsCallback(msg):
     global gpsx, gpsy, gpsth
-    #print "----- New Location -----"
-    #print "X: ", msg.x
-    print "Y: ", msg.y
-    #print "Theta: ", msg.theta
     gpsx = msg.x
     #Flip y since the map is upside down
     gpsy = -msg.y

@@ -20,10 +20,7 @@ def pathCallback(msg):
 
 def gpsCallback(msg):
     global gpsx, gpsy, gpsth
-    #print "----- New Location -----"
-    #print "X: ", msg.x
-    #print "Y: ", msg.y
-    #print "Theta: ", msg.theta
+    
     gpsx = msg.x
     #Flip y since the map is upside down
     gpsy = -msg.y
@@ -58,6 +55,7 @@ def publishPose():
 def publishVelocity():
     global trajx,trajy,gpsth,gpsx,gpsy,pathth
 
+    # initialize a twist message
     msg = Twist()
     
     msg.linear.x = gpsx
@@ -78,8 +76,10 @@ def publishVelocity():
     else:
         msg.angular.z = math.atan2(trajy, trajx)
         
+    # assign our path theta global variable
     pathth = msg.angular.z
 
+    # publish our velocity message
     velPub.publish(msg)
 
 def calculateTrajectory():
@@ -111,6 +111,8 @@ def calculateTrajectory():
         current_path += 1
         print "Finished Path " + str(current_path-1)
         
+# initialize all of our global variables
+
 current_path = 1
 sleepCounter = 0
 trajx = 0
@@ -121,17 +123,23 @@ gpsy = 0
 gpsth = 0
 pathth = 0
 
+# initialize our driver node
 rospy.init_node('driver')
 
+# subscribe to the path from planner.py
 rospy.Subscriber("path", Path, pathCallback)
+# subscribe to the filtered gps data
 rospy.Subscriber("gps_filter", Pose2D, gpsCallback)
 
+# publisher nodes for commanded wheel velocities and pose estimates
 velPub = rospy.Publisher("cmd_vel", Twist, queue_size=10)
 posePub = rospy.Publisher("pose_estimate", PoseStamped, queue_size=10)
 
+# 10 hz refresh rates
 rate = rospy.Rate(10) #10 hz
 
 while not rospy.is_shutdown():
+    # publish the pose at 2 Hz and everything else at 10 hz
     if( sleepCounter == 5 ):
         publishPose()
         sleepCounter = 0

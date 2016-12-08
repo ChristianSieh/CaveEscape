@@ -13,15 +13,16 @@ def cmd_velCallback(msg):
     
     # calculate the difference between our directional theta(dot)
     # and the positional theta
+    # we need to special cast around the disconinuity around pi/-pi
+    # convert the units back to 0-2pi format around this area
     if(msg.linear.z > (np.pi / 2.0) and msg.angular.z < (-np.pi / 2.0)):
         newTheta = msg.angular.z + np.pi * 2
     else:
         newTheta = msg.angular.z
 
+    #calculate the difference in thetas
     theta_dot = newTheta - msg.linear.z
    
-    print msg.linear.z, newTheta
-    
     # Increment Speed counter
     #speed_count += 1
     # calculate our wheels speeds from our theta dot
@@ -48,6 +49,8 @@ def publishWheel():
 
     # Add our wheel velocities (radians/sec)
     p = JointTrajectoryPoint()
+    # we have to swap which wheel is which, because
+    # of the direction of the map
     p.velocities.append(phi_2) # left wheel
     p.velocities.append(phi_1) # right wheel
     cmd.points = [p]
@@ -59,13 +62,10 @@ def publishWheel():
 phi_1 = 0
 phi_2 = 0
 
-# Count for recalculation of wheel speed
-#speed_count = 0
-
 # Define constants
 L = 0.15
 r = 0.05
-# speed
+# speed (fast speed)
 v = 0.9
 
 # Start a ROS node.
@@ -79,5 +79,7 @@ rospy.Subscriber("cmd_vel", Twist, cmd_velCallback)
 rate = rospy.Rate(10) # 10 hz
 
 while not rospy.is_shutdown():
+    # publish our new wheel velocity commands
     publishWheel()
+    # sleepy sleep
     rate.sleep()

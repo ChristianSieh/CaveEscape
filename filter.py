@@ -35,11 +35,10 @@ def filterGPS():
     dd = r * dt / 2.0
 
     H = np.array([[1,0,0],[0,1,0],[0,0,1]]) # Observation Matrix
-    HT = H.T
+    HT = H.T    # Observation matrix transpose
     V = np.array([[0.001,0,0],[0,0.001,0],[0,0,0.001]]) # Process Noise
     W = np.array([[0.04, 0.0, 0.0], [0.0, 0.04, 0.0], [0.0, 0.0, 0.04]]) # Measurement Noise
 
-    #v = (r / 2.0) * (phi_1 + phi_2)
     v = phi_1 + phi_2
     
     # x prediction = x of previous point + time constant * speed in x direction
@@ -57,7 +56,7 @@ def filterGPS():
     F1 = [1.0, 0.0, -dd * v * cos(xf[0, 2])]
     F2 = [0.0, 1.0, dd * v * sin(xf[0, 2])]
     F = np.array([F1, F2, [0, 0, 1]]) # Process Matrix
-    FT = F.T
+    FT = F.T    # Process Matrix transpose
     pp = np.dot(F, np.dot(P[0], FT)) + V  # P 1|0 covarariance matrix current predition, based on prev??
     z = [gpsx, gpsy, gpsth]
     y = z - np.dot(H, xp) # residual from observation, z is the observed x,y,th
@@ -89,7 +88,6 @@ def publishFilteredGPS():
     #publish the filtered data
     gpsPub.publish(msg)
     
-    
 # create and initialize global variables
 gpsx = 0
 gpsy = 0
@@ -117,7 +115,7 @@ gpsPub = rospy.Publisher("gps_filter", Pose2D, queue_size=10)
 rospy.Subscriber("gps", Pose2D, gpsCallback)
 rospy.Subscriber("cmd_joint_traj", JointTrajectory, cmdCallback)
 
-rate = rospy.Rate(40) #10 hz
+rate = rospy.Rate(40) #40 hz
 
 #publish our initial position of 0
 msg = Pose2D()
@@ -126,27 +124,8 @@ msg.y = 0
 msg.theta = 0
 gpsPub.publish(msg)
 
-timearr = []
-time = 0
-
-data = []
-datagps = []
-
 while not rospy.is_shutdown():
     #filter the GPS signal
     filterGPS()
     #publish the filtered data
     publishFilteredGPS()
-    
-    #plot data
-    #timearr.append(time)
-    #data.append(filteredth)
-    #datagps.append(gpsth)
-    #plt.plot(timearr, data, color="blue", linewidth=1.0, linestyle="-")
-    #plt.plot(timearr, datagps, color="red", linewidth=1.0, linestyle="-")
-    #plt.ion()
-    #plt.pause(0.05)
-    #time += 1
-    
-    #sleepy sleep    
-    #rate.sleep()
