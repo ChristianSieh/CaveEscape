@@ -31,7 +31,7 @@ def filterGPS():
     L = 0.15
     r = 0.05
 
-    dt = 1.0 / 10.0
+    dt = .0001
     dd = r * dt / 2.0
 
     H = np.array([[1,0,0],[0,1,0],[0,0,1]]) # Observation Matrix
@@ -63,7 +63,6 @@ def filterGPS():
     y = z - np.dot(H, xp) # residual from observation, z is the observed x,y,th
     
     S = np.dot(H, np.dot(pp, HT)) + W
-    #S = np.dot(H, np.dot(pp, HT))
     SI = linalg.inv(S)
     kal = np.dot(pp, np.dot(HT, SI)) # Kalman Gain
 
@@ -76,24 +75,6 @@ def filterGPS():
     #update previous values
     xf[0] = xf[1]
     P[0] = P[1]
-
-    #print "XP: ", xp
-    #print "XF: ", xf
-    #print "V: ", V
-    #print "F1: ", F1
-    #print "F2: ", F2
-    #print "F: ", F
-    #print "SI: ", SI
-    #print "HT: ", HT
-    #print "PP: ", pp
-    #print "Kalman Gain: ", kal
-    #print "gpsx: ", gpsx
-    #print "gpsy: ", gpsy
-    #print "gpsth: ", gpsth
-    #print "filteredx: ", filteredx
-    #print "filteredy: ", filteredy
-    #print "filteredth: ", filteredth
-    
     
 def publishFilteredGPS():
     global filteredx, filteredy, filteredth
@@ -125,7 +106,7 @@ xf = np.zeros((2, 3))
 xp = np.zeros(3)
 sp = np.zeros(3)
 z = np.zeros(3)
-P = np.zeros((2, 3, 3)) # Pose, has to be updated with our pose data?????? pg 226
+P = np.zeros((2, 3, 3))
 
 # initialize our node
 rospy.init_node('filter')
