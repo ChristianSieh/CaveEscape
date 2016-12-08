@@ -21,15 +21,21 @@ def pathCallback(msg):
 def gpsCallback(msg):
     global gpsx, gpsy, gpsth
     #print "----- New Location -----"
-    print "X: ", msg.x
-    print "Y: ", msg.y
-    print "Theta: ", msg.theta
+    #print "X: ", msg.x
+    #print "Y: ", msg.y
+    #print "Theta: ", msg.theta
     gpsx = msg.x
+    #Flip y since the map is upside down
     gpsy = -msg.y
     gpsth = msg.theta
 
 def publishPose():
-    global gpsx, gpsy, gpsth
+    global gpsx, gpsy, gpsth, trajx, trajy, map_rcvd
+
+	#check if we have received our path yet
+    if( not map_rcvd ):
+	    return
+
     msg = PoseStamped()
     
     # important!
@@ -37,11 +43,11 @@ def publishPose():
 
     # Publish Position (gpsx,gpsy)
     msg.pose.position.x = gpsx
-    msg.pose.position.y = gpsy
+    msg.pose.position.y = -gpsy
 
     # Publish theta = pi/4
-    # We need to convert from euler coordinates to a quaternion.
-    quaternion = tf.transformations.quaternion_from_euler(gpsx,gpsy,gpsth)
+    # We need to convert from euler coordinates to a quaternion. 
+    quaternion = tf.transformations.quaternion_from_euler(0, 0, pathth)
     msg.pose.orientation.x = quaternion[0]
     msg.pose.orientation.y = quaternion[1]
     msg.pose.orientation.z = quaternion[2]
@@ -50,7 +56,7 @@ def publishPose():
     posePub.publish(msg)
 
 def publishVelocity():
-    global trajx,trajy,gpsth,gpsx,gpsy 
+    global trajx,trajy,gpsth,gpsx,gpsy,pathth
 
     msg = Twist()
     
@@ -72,6 +78,8 @@ def publishVelocity():
     else:
         msg.angular.z = math.atan2(trajy, trajx)
         
+    pathth = msg.angular.z
+
     velPub.publish(msg)
 
 def calculateTrajectory():
@@ -91,15 +99,15 @@ def calculateTrajectory():
     else:
         #calculate distance needed to go
         distx = path[current_path].pose.position.x-gpsx
-        disty = path[current_path].pose.position.y-gpsy
+        disty = (-path[current_path].pose.position.y) - gpsy
         
         trajx = distx
         #need to flip the y trajectory to compensate for map coordinates
         trajy = -disty
         
     #check if we have completed our current path
-    if( abs(distx) < 0.4 and
-        abs(disty) < 0.4):
+    if( abs(distx) < 0.1 and
+        abs(disty) < 0.1):
         current_path += 1
         print "Finished Path " + str(current_path-1)
         
@@ -111,6 +119,7 @@ map_rcvd = False
 gpsx = 0
 gpsy = 0
 gpsth = 0
+pathth = 0
 
 rospy.init_node('driver')
 

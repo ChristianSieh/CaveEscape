@@ -22,7 +22,7 @@ def gpsCallback(msg):
     global gpsx, gpsy, gpsth
     #print "----- New Location -----"
     #print "X: ", msg.x
-    #print "Y: ", msg.y
+    print "Y: ", msg.y
     #print "Theta: ", msg.theta
     gpsx = msg.x
     #Flip y since the map is upside down
@@ -106,8 +106,8 @@ def calculateTrajectory():
         trajy = -disty
         
     #check if we have completed our current path
-    if( abs(distx) < 0.4 and
-        abs(disty) < 0.4):
+    if( abs(distx) < 0.3 and
+        abs(disty) < 0.3):
         current_path += 1
         print "Finished Path " + str(current_path-1)
         

@@ -69,7 +69,7 @@ def filterGPS():
 
     # Update previous point to current point
     xf[1] = xp + np.dot(kal,y)
-    P[1] = pp - np.dot(kal, pp)
+    P[1] = pp - np.dot(kal, np.dot(H, pp))
 
     filteredx, filteredy, filteredth = xf[1]
     
@@ -87,12 +87,12 @@ def filterGPS():
     #print "HT: ", HT
     #print "PP: ", pp
     #print "Kalman Gain: ", kal
-    print "gpsx: ", gpsx
-    print "gpsy: ", gpsy
-    print "gpsth: ", gpsth
-    print "filteredx: ", filteredx
-    print "filteredy: ", filteredy
-    print "filteredth: ", filteredth
+    #print "gpsx: ", gpsx
+    #print "gpsy: ", gpsy
+    #print "gpsth: ", gpsth
+    #print "filteredx: ", filteredx
+    #print "filteredy: ", filteredy
+    #print "filteredth: ", filteredth
     
     
 def publishFilteredGPS():
@@ -136,7 +136,7 @@ gpsPub = rospy.Publisher("gps_filter", Pose2D, queue_size=10)
 rospy.Subscriber("gps", Pose2D, gpsCallback)
 rospy.Subscriber("cmd_joint_traj", JointTrajectory, cmdCallback)
 
-rate = rospy.Rate(10) #10 hz
+rate = rospy.Rate(40) #10 hz
 
 #publish our initial position of 0
 msg = Pose2D()
@@ -158,14 +158,14 @@ while not rospy.is_shutdown():
     publishFilteredGPS()
     
     #plot data
-    timearr.append(time)
-    data.append(filteredth)
-    datagps.append(gpsth)
-    plt.plot(timearr, data, color="blue", linewidth=1.0, linestyle="-")
-    plt.plot(timearr, datagps, color="red", linewidth=1.0, linestyle="-")
-    plt.ion()
-    plt.pause(0.05)
-    time += 1
+    #timearr.append(time)
+    #data.append(filteredth)
+    #datagps.append(gpsth)
+    #plt.plot(timearr, data, color="blue", linewidth=1.0, linestyle="-")
+    #plt.plot(timearr, datagps, color="red", linewidth=1.0, linestyle="-")
+    #plt.ion()
+    #plt.pause(0.05)
+    #time += 1
     
     #sleepy sleep    
-    rate.sleep()
+    #rate.sleep()
