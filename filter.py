@@ -8,6 +8,7 @@ from scipy import linalg
 from math import cos,sin
 
 from geometry_msgs.msg import Pose2D
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 def gpsCallback(msg):
     global gpsx, gpsy, gpsth
@@ -23,20 +24,63 @@ def cmdCallback(msg):
     phi_2 = msg.velocities[1]
     
 def filterGPS():
-    global gpsx,gpsy,gpsth,phi_1,phi_2,xp,sp,xf,P
+    global gpsx, gpsy, gpsth, phi_1, phi_2
     
-    V = np.array([[0.001,0,0],[0,0.001,0],[0,0,0.001]])
-    H = np.array([[1,0,0],[0,1,0],[0,0,1]])
+    # Define constants
+    L = 0.15
+    r = 0.05
+
+    dt = 1.0 / 10.0
+    dd = r * dt / 2.0
+
+    H = np.array([[1,0,0],[0,1,0],[0,0,1]]) # Observation Matrix
     HT = H.T
+    V = np.array([[0.001,0,0],[0,0.001,0],[0,0,0.001]]) # Process Noise
+    #W = np.array([[var2, 0, 0], [0, var2, 0], [0, 0, var2]]) # Measurement Noise
+    P = np.zeros((2, 3, 3)) # Pose, has to be updated with our pose data?????? pg 226
     
-    v = (r/2.0)*(phi_1+phi_2)
+    xf = np.zeros((2, 3))
+    xp = np.zeros(3)
+    sp = np.zeros(3)
+    z = np.zeros((2, 3))
+
+    #v = (r / 2.0) * (phi_1 + phi_2)
+    v = phi_1 + phi_2
     
-    #x prediction = x (filtered??) + time constant * speed in x direction
-    xp[0]=xf[0,0]+dt*v*np.cos(xp[2])
-    #y prediction = y (filtered??) + time constant * speed in y direction
-    xp[1]=xf[1,0]+dt*v*np.sin(xp[2])
-    #assign our jacobians with the updated data, we will have a 3x3 of jacobian: x,y,0
-    
+    # x prediction = x of previous point + time constant * speed in x direction
+    xp[0] = xf[0,0] + dd * v * np.cos(xf[0, 2])
+
+    # y prediction = y of previous point + time constant * speed in y direction
+    xp[1] = xf[0,1] + dd * v * np.sin(xf[0, 2])
+
+    # theta prediction = theta of previous point + time constant * turn speed ?
+    xp[2] = xf[0,2] + dd * (phi_1 - phi_2) / L
+
+    # assign our jacobians with the updated data, we will have a 3x3 of jacobian: x,y,0
+
+    # xf[0, 2] = theta of previous point
+    F1 = [1.0, 0.0, -dd * v * sin(xf[0, 2])]
+    F2 = [0.0, 1.0, dd * v * cos(xf[0, 2])]
+    F = np.array([F1, F2, [0, 0, 1]]) # Process Matrix
+    FT = F.T
+    pp = np.dot(F, np.dot(P[0], FT)) + V  # P 1|0
+    y = z[1] - np.dot(H, xp) # ??????????
+    #S = np.dot(H, np.dot(pp, HT)) + W
+    S = np.dot(H, np.dot(pp, HT))
+    SI = linalg.inv(S)
+    kal = np.dot(pp, np.dot(HT, SI)) # Kalman Gain
+
+    # Update previous point to current point
+    xf[1] = xp + np.dot(kal,y)
+    P[1] = pp - np.dot(kal, np.dot(H, pp))
+
+    filteredx = xf[1][0]
+    filteredy = xf[1][1]
+    filteredth = xf[1][2]
+
+    print "filteredx: ", filteredx
+    print "filteredy: ", filteredy
+    print "filteredth: ", filteredth
     
     
 def publishFilteredGPS():
@@ -50,7 +94,7 @@ def publishFilteredGPS():
     msg.theta = filteredth
     
     #publish the filtered data
-    gpsPub.Publish(msg)
+    gpsPub.publish(msg)
     
     
 # create and initialize global variables
@@ -64,16 +108,6 @@ phi_2 = 0
 filteredx = 0
 filteredy = 0
 filteredth = 0
-
-xp = np.zeros(3)
-sp = np.zeros(3)
-xf = np.zeros((2,3))
-P = np.zeros((2,3,3))
-
-# Define constants
-L = 0.15
-r = 0.05
-dt = 1.0/10.0
 
 # initialize our node
 rospy.init_node('filter')
@@ -91,7 +125,7 @@ msg = Pose2D()
 msg.x = 0
 msg.y = 0
 msg.theta = 0
-gpsPub.Publish(msg)
+gpsPub.publish(msg)
 
 while not rospy.is_shutdown():
     #filter the GPS signal
