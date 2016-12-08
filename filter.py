@@ -6,6 +6,7 @@ import rospy
 import numpy as np
 from scipy import linalg
 from math import cos,sin
+import matplotlib.pyplot as plt
 
 from geometry_msgs.msg import Pose2D
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -20,11 +21,11 @@ def cmdCallback(msg):
     global phi_1, phi2
     
     #store our latest commanded wheel velocities
-    phi_1 = msg.velocities[0]
-    phi_2 = msg.velocities[1]
+    phi_1 = msg.points[0].velocities[0]
+    phi_2 = msg.points[0].velocities[1]
     
 def filterGPS():
-    global gpsx, gpsy, gpsth, phi_1, phi_2, xp, xf, sp, z
+    global gpsx, gpsy, gpsth, phi_1, phi_2, xp, xf, sp, z, filteredx, filteredy, filteredth
     
     # Define constants
     L = 0.15
@@ -78,6 +79,9 @@ def filterGPS():
     #update previous values
     xf[0] = xf[1]
 
+    print "gpsx: ", gpsx
+    print "gpsy: ", gpsy
+    print "gpsth: ", gpsth
     print "filteredx: ", filteredx
     print "filteredy: ", filteredy
     print "filteredth: ", filteredth
@@ -132,10 +136,24 @@ msg.y = 0
 msg.theta = 0
 gpsPub.publish(msg)
 
+timearr = []
+time = 0
+
+data = []
+
 while not rospy.is_shutdown():
     #filter the GPS signal
     filterGPS()
     #publish the filtered data
     publishFilteredGPS()
+    
+    #plot data
+    timearr.append(time)
+    data.append(filteredx)
+    plt.plot(timearr, data, color="blue", linewidth=1.0, linestyle="-")
+    plt.ion()
+    plt.pause(0.05)
+    time += 1
+    
     #sleepy sleep    
     rate.sleep()

@@ -66,7 +66,7 @@ speed_count = 0
 L = 0.15
 r = 0.05
 # speed
-v = 0.8
+v = 0.3
 
 # Start a ROS node.
 rospy.init_node('diff_drive')
