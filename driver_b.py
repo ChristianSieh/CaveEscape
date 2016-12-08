@@ -21,9 +21,9 @@ def pathCallback(msg):
 def gpsCallback(msg):
     global gpsx, gpsy, gpsth
     #print "----- New Location -----"
-    #print "X: ", msg.x
-    #print "Y: ", msg.y
-    #print "Theta: ", msg.theta
+    print "X: ", msg.x
+    print "Y: ", msg.y
+    print "Theta: ", msg.theta
     gpsx = msg.x
     gpsy = -msg.y
     gpsth = msg.theta

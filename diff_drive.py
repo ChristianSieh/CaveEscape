@@ -9,7 +9,7 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from geometry_msgs.msg import Twist
 
 def cmd_velCallback(msg):
-    global phi_1,phi_2,speed_count
+    global phi_1,phi_2#,speed_count
     
     # calculate the difference between our directional theta(dot)
     # and the positional theta
@@ -23,12 +23,12 @@ def cmd_velCallback(msg):
     print msg.linear.z, newTheta
     
     # Increment Speed counter
-    speed_count += 1
+    #speed_count += 1
     # calculate our wheels speeds from our theta dot
-    if(speed_count % 5 == 0):
-        speed_count = 0
-        phi_1 = (L*theta_dot)/r+v/r
-        phi_2 = -(L*theta_dot)/r+v/r
+    #if(speed_count % 5 == 0):
+        #speed_count = 0
+    phi_1 = (L*theta_dot)/r+v/r
+    phi_2 = -(L*theta_dot)/r+v/r
     
     # if the trajectories are both 0, we are trying
     # to indicate a stop condition from the driver
@@ -60,7 +60,7 @@ phi_1 = 0
 phi_2 = 0
 
 # Count for recalculation of wheel speed
-speed_count = 0
+#speed_count = 0
 
 # Define constants
 L = 0.15
