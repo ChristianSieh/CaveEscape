@@ -29,23 +29,15 @@ path = list()
 def mapCallback(msg):
     global mapWidth, mapHeight, startIndex, goalIndex, path
 
-    print "----- New Map -----"
-    print "Width: ", msg.info.width
-    print "Height: ", msg.info.height
-    print "Resolution: ", msg.info.resolution
-    print "Origin: \n", msg.info.origin
-
     # Calculate goal index
     xindex = int((goalX - msg.info.origin.position.x) * (1.0 / msg.info.resolution))
     yindex = int((goalY - msg.info.origin.position.y) * (1.0 / msg.info.resolution))
     goalIndex = yindex * msg.info.width + xindex
-    print "Goal Index: ", goalIndex
 
     # Calculate start index
     xindex = int((startX - msg.info.origin.position.x) * (1.0 / msg.info.resolution))
     yindex = int((startY - msg.info.origin.position.y) * (1.0 / msg.info.resolution))
     startIndex = yindex * msg.info.width + xindex
-    print "Start Index: ", startIndex
 
     originX = msg.info.origin.position.x
     originY = msg.info.origin.position.y
@@ -114,25 +106,28 @@ def mapCallback(msg):
 
     pathMap = np.zeros((msg.info.width * msg.info.height))
 
-    inc = 1
-    path = waveFront(imageMap, pathMap, goalIndex, inc)
+    # Calculate Path
+    path = waveFront(imageMap, pathMap, goalIndex)
 
-    for i, value in enumerate(imageMap):
-        if(value == -1.0):
-            imageMap[i] = 127
-        if(value == 0.0):
-            imageMap[i] = 255
-        if(value == 100.0):
-            imageMap[i] = 0
+    # Image Drawer
 
-    for i, value in enumerate(path):
-        imageMap[value] = 180
+    #for i, value in enumerate(imageMap):
+    #    if(value == -1.0):
+    #        imageMap[i] = 127
+    #    if(value == 0.0):
+    #        imageMap[i] = 255
+    #    if(value == 100.0):
+    #        imageMap[i] = 0
 
-    test = np.reshape(imageMap, (mapWidth, mapHeight))
+    #for i, value in enumerate(path):
+    #    imageMap[value] = 180
+
+    #test = np.reshape(imageMap, (mapWidth, mapHeight))
 
     #blah = Image.fromarray(test)
     #blah.show()
 
+# Up Index
 def upIndex(index):
     global mapHeight
 
@@ -142,6 +137,7 @@ def upIndex(index):
 
     return -1
 
+# Down Index
 def downIndex(index):
     global mapWidth, mapHeight
 
@@ -151,6 +147,7 @@ def downIndex(index):
 
     return -1
 
+# Left Index
 def leftIndex(index):
     global mapWidth, mapHeight    
 
@@ -160,6 +157,7 @@ def leftIndex(index):
 
     return -1
 
+# Right Index
 def rightIndex(index):
     global mapWidth, mapHeight
 
@@ -169,6 +167,7 @@ def rightIndex(index):
 
     return -1
 
+# Up Left Index
 def upLeftIndex(index):
     global mapWidth, mapHeight
 
@@ -178,6 +177,7 @@ def upLeftIndex(index):
 
     return -1
 
+# Up Right Index
 def upRightIndex(index):
     global mapWidth, mapHeight
 
@@ -187,6 +187,7 @@ def upRightIndex(index):
 
     return -1
 
+# Down Left Index
 def downLeftIndex(index):
     global mapWidth, mapHeight
 
@@ -196,6 +197,7 @@ def downLeftIndex(index):
 
     return -1
 
+# Down Right Index
 def downRightIndex(index):
     global mapWidth, mapHeight
 
@@ -205,7 +207,9 @@ def downRightIndex(index):
 
     return -1
 
-def waveFront(imageMap, pathMap, index, inc):
+def waveFront(imageMap, pathMap, index):
+
+    inc = 1
 
     pathMap[index] = inc
 
@@ -214,6 +218,7 @@ def waveFront(imageMap, pathMap, index, inc):
     queue = list()
     queue.append(index)
 
+    # BFS using pathMap to keep track of visited
     while len(queue) != 0:
         current = queue.pop(0)
         for neighbor in getNeighbors(imageMap, current):
@@ -234,29 +239,33 @@ def descent(imageMap, pathMap):
     tempIndex = startIndex
     path = list()
 
-    # Descent Value, imageMap Index
+    # [Descent Value, imageMap Index]
     neighborDict = dict()
 
     while tempIndex != goalIndex:
         neighbors = getNeighbors(imageMap, tempIndex)
         
+        # Keep the indices and their values together in a dictionary
         for i, value in enumerate(neighbors):
             temp = pathMap[value]
             neighborDict[temp] = value
             
+        # Get the descent value of each neighbor        
         neighborValues = pathMap[neighbors]
+        # Find the best neighbor
         bestNeighbor = min(neighborValues)
+        # Add to path
         path.append(neighborDict[bestNeighbor])
+        # Update index
         tempIndex = neighborDict[bestNeighbor]
 
     return path    
 
-
+# Get 8 way open neighbors
 def getNeighbors(imageMap, index):
     neighbors = list()
 
     tempIndex = upIndex(index)
-
     # if the index isn't out of bounds, and it's an open space
     if(tempIndex != -1 and imageMap[tempIndex] == 0):
         neighbors.append(tempIndex)
@@ -291,48 +300,11 @@ def getNeighbors(imageMap, index):
 
     return neighbors
 
-#def calculatePath():
-
-
 def gpsCallback(msg):
     print "----- New Location -----"
     print "X: ", msg.x
     print "Y: ", msg.y
     print "Theta: ", msg.theta
-
-### Lidar stored here until we know where to put it
-def lidarCallback(msg):
-    print "----- New Scan -----"
-
-    # Minimum angle for laser sweep
-    print "Min Angle: ", msg.angle_min
-
-    # Max angle for laser sweep
-    print "Max Angle: ", msg.angle_max
-
-    # Shortest distance the laser will measure
-    print "Min Range: ", msg.range_min
-
-    # Max distance the laser will measure
-    print "Max Range: ", msg.range_max
-
-    # The angle increment between range values in the laser scan
-    print "Angle Increment: ", msg.angle_increment
-
-    # Print out some range values...
-    print "Ranges: "
-
-    # Smallest angle:
-    print "\t" + str(msg.angle_min) + " radians: " + str(msg.ranges[0])
-
-    # Middle angle
-    index = len(msg.ranges)/2
-    angle = msg.angle_min + (index*msg.angle_increment)
-    print "\t" + str(angle) + " radians: " + str(msg.ranges[index])
-
-    # Biggest angle
-    index = len(msg.ranges)-1
-    print "\t" + str(msg.angle_max) + " radians: " + str(msg.ranges[index])
 
 def publishPath():
     msg = Path()
@@ -342,17 +314,19 @@ def publishPath():
 
     newPath = list()
 
+    # Only publish every 5th point since we can afford to skip some
     for i, value in enumerate(path):
         if(i % 5 == 0):
             newPath.append(value)
 
     for i, value in enumerate(newPath):
+        # Convert indices to x and y in meters
         x = value % mapWidth
         y = (value - x) / mapHeight
-
         x = x / 10.0 - 10
         y = y / 10.0 - 10
 
+        # Add to message
         p = PoseStamped()
         p.pose.position.x = x
         p.pose.position.y = y
@@ -363,13 +337,10 @@ def publishPath():
 planner.init_node('planner')
 
 planner.Subscriber("map", OccupancyGrid, mapCallback)
-#planner.Subscriber("gps", Pose2D, gpsCallback)
-#planner.Subscriber("laser/scan", LaserScan, lidarCallback)
 
 pathPub = planner.Publisher("path", Path, queue_size=10)
 
 rate = planner.Rate(2) # 2 hz
-#rate = rospy.Rate(40) # 40 hz
 
 while not planner.is_shutdown():
     publishPath()
