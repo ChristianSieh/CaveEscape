@@ -24,7 +24,7 @@ def cmdCallback(msg):
     phi_2 = msg.velocities[1]
     
 def filterGPS():
-    global gpsx, gpsy, gpsth, phi_1, phi_2
+    global gpsx, gpsy, gpsth, phi_1, phi_2, xp, xf, sp, z
     
     # Define constants
     L = 0.15
@@ -39,10 +39,7 @@ def filterGPS():
     #W = np.array([[var2, 0, 0], [0, var2, 0], [0, 0, var2]]) # Measurement Noise
     P = np.zeros((2, 3, 3)) # Pose, has to be updated with our pose data?????? pg 226
     
-    xf = np.zeros((2, 3))
-    xp = np.zeros(3)
-    sp = np.zeros(3)
-    z = np.zeros((2, 3))
+    
 
     #v = (r / 2.0) * (phi_1 + phi_2)
     v = phi_1 + phi_2
@@ -63,8 +60,10 @@ def filterGPS():
     F2 = [0.0, 1.0, dd * v * cos(xf[0, 2])]
     F = np.array([F1, F2, [0, 0, 1]]) # Process Matrix
     FT = F.T
-    pp = np.dot(F, np.dot(P[0], FT)) + V  # P 1|0
-    y = z[1] - np.dot(H, xp) # ??????????
+    pp = np.dot(F, np.dot(P[0], FT)) + V  # P 1|0 covarariance matrix current predition, based on prev??
+    z = [gpsx, gpsy, gpsth]
+    y = z - np.dot(H, xp) # residual from observation, z is the observed x,y,th
+    
     #S = np.dot(H, np.dot(pp, HT)) + W
     S = np.dot(H, np.dot(pp, HT))
     SI = linalg.inv(S)
@@ -74,9 +73,10 @@ def filterGPS():
     xf[1] = xp + np.dot(kal,y)
     P[1] = pp - np.dot(kal, np.dot(H, pp))
 
-    filteredx = xf[1][0]
-    filteredy = xf[1][1]
-    filteredth = xf[1][2]
+    filteredx, filteredy, filteredth = xf[1]
+    
+    #update previous values
+    xf[0] = xf[1]
 
     print "filteredx: ", filteredx
     print "filteredy: ", filteredy
@@ -108,6 +108,11 @@ phi_2 = 0
 filteredx = 0
 filteredy = 0
 filteredth = 0
+
+xf = np.zeros((2, 3))
+xp = np.zeros(3)
+sp = np.zeros(3)
+z = np.zeros(3)
 
 # initialize our node
 rospy.init_node('filter')
